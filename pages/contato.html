@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfólio Agnaldo Korb</title>
+    <meta
+      name="description"
+      content="Portfólio de Agnaldo Korb, desenvolvedor Front-end. Projetos de desenvolvimento web, HTML, CSS, JavaScript e React. Entre em contato para colaborações e oportunidades de trabalho."
+    />
+    <link rel="stylesheet" href="../css/index.css" />
+    <link rel="stylesheet" href="../css/footer.css" />
+    <link rel="stylesheet" href="../css/menu.css" />
+    <link rel="stylesheet" href="../css/contact.css" />
+  </head>
+  <body>
+    <!-- Menu Fixo -->
+    <nav class="menu-fixo">
+      <h2>Agnaldo Korb</h2>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+        aria-controls="menu-principal"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <ul id="menu-principal">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../pages/projetos.html">Projetos</a></li>
+        <li><a href="../pages/sobre.html">Sobre</a></li>
+        <li><a href="../pages/contato.html">Contato</a></li>
+      </ul>
+    </nav>
+
+    <main class="contato-main">
+      <section class="contato-hero" aria-labelledby="contato-titulo">
+        <h1 id="contato-titulo">Vamos conversar sobre seu projeto</h1>
+        <p>
+          Escolha o canal de contato. Voce pode enviar uma mensagem por e-mail
+          para contato@agnaldo.dev.br ou enviar uma mensagem direta pelo WhatsApp para +55 47 99925-3962. Estou ansioso para ouvir sobre seu projeto e discutir como posso ajudar a torná-lo realidade!
+        </p>
+      </section>
+
+      <section class="contato-card" aria-label="Formulario de contato">
+        <form id="contact-form" class="contact-form" novalidate>
+          <fieldset class="canal-fieldset">
+            <legend>Como deseja enviar o contato?</legend>
+
+            <label class="canal-option" for="canal-email">
+              <input
+                type="radio"
+                name="canal"
+                id="canal-email"
+                value="email"
+                checked
+              />
+              <span>E-mail</span>
+            </label>
+
+            <label class="canal-option" for="canal-whatsapp">
+              <input
+                type="radio"
+                name="canal"
+                id="canal-whatsapp"
+                value="whatsapp"
+              />
+              <span>WhatsApp</span>
+            </label>
+          </fieldset>
+
+          <div class="form-grid">
+            <label for="nome">Nome</label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              placeholder="Seu nome"
+              required
+            />
+
+            <label for="email">Seu e-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="voce@exemplo.com"
+              required
+            />
+
+            <label for="assunto">Assunto</label>
+            <input
+              id="assunto"
+              name="assunto"
+              type="text"
+              placeholder="Ex.: Novo projeto de site"
+              required
+            />
+
+            <label for="mensagem">Mensagem</label>
+            <textarea
+              id="mensagem"
+              name="mensagem"
+              rows="7"
+              placeholder="Descreva seu projeto, prazo e objetivo"
+              required
+            ></textarea>
+          </div>
+
+          <p class="contact-note" id="contact-note">
+            Ao enviar por e-mail, a mensagem sera processada pelo Resend e
+            enviada para contato@agnaldo.dev.br.
+          </p>
+
+          <div class="contact-actions">
+            <button type="submit" class="btn btn-primary">
+              Enviar contato
+            </button>
+          </div>
+
+          <p
+            id="contact-status"
+            class="contact-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </form>
+      </section>
+    </main>
+
+    <footer id="pe">
+      <span class="footer-copy">
+        &copy;&<span id="ano"></span> . Todos os direitos reservados
+      </span>
+      <span class="footer-separator" aria-hidden="true">|</span>
+      <span class="footer-credit">Desenvolvido por Agnaldo Korb.</span>
+    </footer>
+    <script src="../js/home.js"></script>
+    <script src="../js/contact.js"></script>
+    <script src="../js/menu.js"></script>
+  </body>
+</html>

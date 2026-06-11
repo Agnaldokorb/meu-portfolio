@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfólio Agnaldo Korb</title>
+    <meta name="description" content="Portfólio de Agnaldo Korb, desenvolvedor Front-end. Projetos de desenvolvimento web, HTML, CSS, JavaScript e React. Entre em contato para colaborações e oportunidades de trabalho.">
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="../css/footer.css">
+    <link rel="stylesheet" href="../css/projetos.css">
+    <link rel="stylesheet" href="../css/menu.css">
+</head>
+<body>
+
+    <!-- Menu Fixo -->
+    <nav class="menu-fixo">
+        <h2>Agnaldo Korb</h2>
+        <button
+            class="menu-toggle"
+            type="button"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+            aria-controls="menu-principal"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <ul id="menu-principal">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../pages/projetos.html">Projetos</a></li>
+            <li><a href="../pages/sobre.html">Sobre</a></li>
+            <li><a href="../pages/contato.html">Contato</a></li>
+        </ul> 
+    </nav>
+
+    <section class="projetos">
+        <h1>Meus últimos Projetos</h1>
+        <div id="cards-container" class="projeto-cards"></div>
+    </section>
+    <section class="projetos">
+            <h1>Todos os Projetos no GitHub</h1>
+            <div id="lista-container" class="projeto-lista"></div>
+    </section>
+
+    <footer id="pe">
+      <span class="footer-copy">
+        &copy;&<span id="ano"></span> . Todos os direitos reservados
+      </span>
+      <span class="footer-separator" aria-hidden="true">|</span>
+      <span class="footer-credit">Desenvolvido por Agnaldo Korb.</span>
+    </footer>
+    <script src="../js/home.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/menu.js"></script>
+
+</body>
+</html>

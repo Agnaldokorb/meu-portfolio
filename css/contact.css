@@ -1,0 +1,174 @@
+.contato-main {
+  width: min(1100px, calc(100% - 32px));
+  margin: 110px auto 48px;
+  display: grid;
+  gap: 22px;
+}
+
+.contato-hero {
+  padding: 26px;
+  border-radius: 20px;
+  background: linear-gradient(
+    155deg,
+    rgba(15, 32, 64, 0.78),
+    rgba(53, 83, 136, 0.64)
+  );
+  color: #f6f9ff;
+  border: 1px solid rgba(185, 205, 244, 0.36);
+  box-shadow: 0 16px 30px rgba(7, 18, 42, 0.25);
+}
+
+.contato-hero h1 {
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  margin-bottom: 10px;
+}
+
+.contato-hero p {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 72ch;
+}
+
+.contato-card {
+  border-radius: 20px;
+  background: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(241, 247, 255, 0.84)
+  );
+  border: 1px solid rgba(170, 191, 232, 0.45);
+  box-shadow: 0 18px 34px rgba(10, 24, 54, 0.2);
+  padding: 28px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.contact-form {
+  display: grid;
+  gap: 18px;
+}
+
+.canal-fieldset {
+  border: 1px solid rgba(112, 138, 188, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.canal-fieldset legend {
+  color: #203a6d;
+  font-weight: 700;
+  padding: 0 8px;
+}
+
+.canal-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #243c6a;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(214, 226, 248, 0.5);
+  cursor: pointer;
+}
+
+.form-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.form-grid label {
+  color: #223962;
+  font-weight: 700;
+}
+
+.form-grid input,
+.form-grid textarea {
+  width: 100%;
+  border: 1px solid rgba(118, 141, 186, 0.46);
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: #f9fbff;
+  color: #21375e;
+  font-size: 0.98rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-grid input:focus,
+.form-grid textarea:focus {
+  outline: none;
+  border-color: #3f68b2;
+  box-shadow: 0 0 0 3px rgba(63, 104, 178, 0.2);
+}
+
+.contact-note {
+  color: #3f5279;
+  font-size: 0.95rem;
+}
+
+.contact-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 15px;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(10, 22, 48, 0.22);
+}
+
+.btn-primary {
+  background: #214c9d;
+  color: #f3f7ff;
+}
+
+.btn-secondary {
+  background: #10a36f;
+  color: #f4fffb;
+}
+
+.contact-status {
+  min-height: 1.4em;
+  color: #1f3a6b;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .contato-main {
+    width: min(100% - 20px, 800px);
+    margin: 88px auto 28px;
+  }
+
+  .contato-hero,
+  .contato-card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .contact-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .btn {
+    text-align: center;
+  }
+}

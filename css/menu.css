@@ -1,0 +1,129 @@
+.menu-fixo {
+  position: fixed;
+  top: 10px;
+  left: 20%;
+  width: 60%;
+  background-color: rgba(74, 91, 140, 0.8);
+  color: #f0f0f2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  z-index: 1000; /* Garante que o menu fique por cima de outros elementos */
+  border-radius: 20px;
+}
+.menu-fixo h2 {
+  font-size: 24px;
+  font-weight: bold;
+  background: linear-gradient(to right, #ffffff 0%, #000000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.menu-toggle {
+  display: none;
+  width: 46px;
+  height: 46px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 5px 0;
+  border-radius: 3px;
+  background-color: #ffffff;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.menu-fixo ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+.menu-fixo a {
+  text-decoration: none;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.menu-fixo a:hover {
+  color: #333;
+}
+.menu-fixo a.active {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .menu-fixo {
+    top: 12px;
+    right: 12px;
+    left: auto;
+    width: auto;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .menu-fixo h2 {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .menu-toggle:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  .menu-fixo ul {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(280px, calc(100vw - 24px));
+    padding: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 14px;
+    background-color: rgba(50, 65, 108, 0.98);
+    box-shadow: 0 14px 30px rgba(8, 18, 43, 0.3);
+  }
+
+  .menu-fixo.menu-open ul {
+    display: flex;
+  }
+
+  .menu-fixo li,
+  .menu-fixo a {
+    width: 100%;
+  }
+
+  .menu-fixo a {
+    display: block;
+  }
+
+  .menu-fixo.menu-open .menu-toggle span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .menu-fixo.menu-open .menu-toggle span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .menu-fixo.menu-open .menu-toggle span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+}
