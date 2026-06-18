@@ -83,7 +83,7 @@ armazena as mensagens enviadas.
 ## Estrutura do projeto
 
 ```text
-novo-projeto/
+meu-portfolio/
 ├── assets/
 │   ├── dio-bootcamp.webp
 │   ├── engenharia-software.png
