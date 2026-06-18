@@ -36,7 +36,7 @@
   min-height: 290px;
   box-shadow: 0 8px 24px rgba(39, 54, 94, 0.18);
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto 1fr auto auto;
   gap: 10px;
   cursor: pointer;
   transition:
@@ -80,6 +80,62 @@
   font-size: 0.97rem;
   color: #4a5875;
   line-height: 1.5;
+}
+
+.repo-date {
+  color: #38517d;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.repo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.repo-actions a,
+.repo-reload-button {
+  border: 0;
+  border-radius: 10px;
+  background: #1c305d;
+  color: #f7f9ff;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  padding: 10px 12px;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.repo-actions a:nth-child(2) {
+  background: #0f9f6e;
+}
+
+.repo-actions a:hover,
+.repo-reload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 16px rgba(22, 36, 69, 0.2);
+}
+
+.repo-actions a:focus-visible,
+.repo-reload-button:focus-visible {
+  outline: 3px solid #2f5ba8;
+  outline-offset: 2px;
+}
+
+.repo-reload-button {
+  margin: 0 0 20px;
+}
+
+.repo-reload-button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
 }
 
 .projeto-lista {

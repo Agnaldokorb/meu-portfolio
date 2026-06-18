@@ -4,7 +4,10 @@ let userProfileContainer = document.querySelector("#card-user-container");
 
 let GITHUB_USERNAME = "AgnaldoKorb";
 let GITHUB_USER_API_URL = `https://api.github.com/users/${GITHUB_USERNAME}`;
-let GITHUB_API_URL = `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=pushed&direction=desc&per_page=100`;
+let PORTFOLIO_API_BASE_URL = (
+  window.PORTFOLIO_API_BASE_URL ?? "https://api.agnaldo.dev.br"
+).replace(/\/$/, "");
+let REPOSITORIES_API_URL = `${PORTFOLIO_API_BASE_URL}/api/repositories`;
 let CARDS_LIMIT = 3;
 let LIST_LIMIT = 9999999;
 let IMG_USER = `https://github.com/${GITHUB_USERNAME}.png?size=200`;
@@ -21,6 +24,11 @@ class githubRepositories {
     this.modalOverlay = null;
     this.readmeCache = new Map();
     this.lastFocusedElement = null;
+    this.reloadButton = document.querySelector("#reload-repositories");
+
+    if (this.reloadButton) {
+      this.reloadButton.addEventListener("click", () => this.init());
+    }
   }
 
   async init() {
@@ -48,7 +56,11 @@ class githubRepositories {
   }
 
   async fetchRepositories() {
-    let response = await fetch(GITHUB_API_URL);
+    let response = await fetch(REPOSITORIES_API_URL, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Erro ao buscar repositórios: ${response.status}`);
@@ -60,7 +72,25 @@ class githubRepositories {
       throw new Error("Resposta inesperada da API do Github");
     }
 
-    return data;
+    return data.map((repository) => this.normalizeRepository(repository));
+  }
+
+  normalizeRepository(repository) {
+    return {
+      id: repository.id,
+      github_id: repository.github_id,
+      name: repository.nome ?? repository.name,
+      html_url: repository.url_github ?? repository.html_url,
+      homepage: repository.url_website ?? repository.homepage ?? "",
+      description: repository.descricao ?? repository.description,
+      readme_md: repository.readme_md ?? "",
+      pushed_at:
+        repository.ultimo_commit_data ??
+        repository.pushed_at ??
+        repository.updated_at,
+      last_commit_sha: repository.ultimo_commit_sha ?? "",
+      last_commit_message: repository.ultimo_commit_msg ?? "",
+    };
   }
 
   async fetchUserProfile() {
@@ -73,58 +103,11 @@ class githubRepositories {
     return response.json();
   }
 
-  async fetchRepositoryReadme(repositoryName) {
-    let response = await fetch(
-      `https://api.github.com/repos/${GITHUB_USERNAME}/${repositoryName}/readme`,
-      {
-        headers: {
-          Accept: "application/vnd.github.raw+json",
-        },
-      },
-    );
-
-    if (response.status === 404) {
-      return "README.md principal nao encontrado para este repositorio.";
-    }
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar README: ${response.status}`);
-    }
-
-    return response.text();
-  }
-
-  async renderReadmeMarkdown(markdownText, repositoryName) {
-    let response = await fetch("https://api.github.com/markdown", {
-      method: "POST",
-      headers: {
-        Accept: "text/html",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: markdownText,
-        mode: "gfm",
-        context: `${GITHUB_USERNAME}/${repositoryName}`,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao renderizar markdown: ${response.status}`);
-    }
-
-    return response.text();
-  }
-
-  escapeHtml(text) {
-    return text
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
   setLoading() {
+    if (this.reloadButton) {
+      this.reloadButton.disabled = true;
+    }
+
     if (this.cardsElement) {
       this.cardsElement.innerHTML =
         "<p>Carregando cards de repositórios...</p>";
@@ -157,6 +140,10 @@ class githubRepositories {
         ),
       );
     }
+
+    if (this.reloadButton) {
+      this.reloadButton.disabled = false;
+    }
   }
 
   renderUserProfile(profile) {
@@ -166,6 +153,10 @@ class githubRepositories {
   }
 
   renderError() {
+    if (this.reloadButton) {
+      this.reloadButton.disabled = false;
+    }
+
     if (this.cardsElement) {
       this.cardsElement.textContent =
         "Erro ao carregar os repositórios. Por favor, tente novamente mais tarde.";
@@ -207,7 +198,17 @@ class githubRepositories {
     description.textContent =
       repository.description ?? "Sem descrição disponível.";
 
-    card.append(img, title, description);
+    let commitDate = document.createElement("p");
+    commitDate.className = "repo-date";
+    commitDate.textContent = `Último commit: ${this.formatDate(repository.pushed_at)}`;
+
+    card.append(
+      img,
+      title,
+      description,
+      commitDate,
+      this.createRepositoryActions(repository),
+    );
     this.addRepositoryLinkEvent(card, repository.html_url, repository);
 
     return card;
@@ -226,10 +227,20 @@ class githubRepositories {
     let title = document.createElement("h2");
     title.textContent = repository.name;
 
-    let language = document.createElement("p");
-    language.textContent = `Linguagem: ${repository.language ?? "Desconhecida"}`;
+    let description = document.createElement("p");
+    description.textContent =
+      repository.description ?? "Sem descrição disponível.";
 
-    item.append(title, language);
+    let commitDate = document.createElement("p");
+    commitDate.className = "repo-date";
+    commitDate.textContent = `Último commit: ${this.formatDate(repository.pushed_at)}`;
+
+    item.append(
+      title,
+      description,
+      commitDate,
+      this.createRepositoryActions(repository),
+    );
     this.addRepositoryLinkEvent(item, repository.html_url, repository);
 
     return item;
@@ -341,28 +352,12 @@ class githubRepositories {
     this.modalOverlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("repo-modal-open");
 
-    try {
-      let readme = this.readmeCache.get(repository.name);
-      if (!readme) {
-        readme = await this.fetchRepositoryReadme(repository.name);
-        this.readmeCache.set(repository.name, readme);
-      }
+    let readme =
+      repository.readme_md ||
+      "README.md principal nao encontrado para este repositorio.";
 
-      try {
-        let renderedReadme = await this.renderReadmeMarkdown(
-          readme,
-          repository.name,
-        );
-        readmeContent.innerHTML = renderedReadme;
-      } catch (renderError) {
-        console.error("Erro ao renderizar markdown:", renderError);
-        readmeContent.innerHTML = `<pre>${this.escapeHtml(readme)}</pre>`;
-      }
-    } catch (error) {
-      console.error("Erro ao carregar README:", error);
-      readmeContent.textContent =
-        "Nao foi possivel carregar o README.md agora. Tente novamente em instantes.";
-    }
+    this.readmeCache.set(repository.name, readme);
+    readmeContent.replaceChildren(this.createReadmeBlock(readme));
   }
 
   closeRepositoryModal() {
@@ -380,6 +375,54 @@ class githubRepositories {
     }
   }
 
+  createReadmeBlock(readme) {
+    let pre = document.createElement("pre");
+    pre.textContent = readme;
+    return pre;
+  }
+
+  createRepositoryActions(repository) {
+    let actions = document.createElement("div");
+    actions.className = "repo-actions";
+
+    let githubLink = document.createElement("a");
+    githubLink.href = repository.html_url;
+    githubLink.textContent = "GitHub";
+    githubLink.target = "_blank";
+    githubLink.rel = "noopener noreferrer";
+
+    actions.append(githubLink);
+
+    let homepage = (repository.homepage ?? "").trim();
+    if (homepage) {
+      let websiteLink = document.createElement("a");
+      websiteLink.href = /^https?:\/\//i.test(homepage)
+        ? homepage
+        : `https://${homepage}`;
+      websiteLink.textContent = "Website";
+      websiteLink.target = "_blank";
+      websiteLink.rel = "noopener noreferrer";
+      actions.append(websiteLink);
+    }
+
+    return actions;
+  }
+
+  formatDate(value) {
+    if (!value) return "Sem data";
+
+    let date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Sem data";
+    }
+
+    return new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(date);
+  }
+
   addRepositoryLinkEvent(element, url, repository) {
     let openAction = () => {
       if (repository) {
@@ -390,9 +433,22 @@ class githubRepositories {
       window.open(url, "_blank", "noopener,noreferrer");
     };
 
-    element.addEventListener("click", openAction);
+    element.addEventListener("click", (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest("a, button")
+      ) {
+        return;
+      }
+
+      openAction();
+    });
 
     element.addEventListener("keypress", (e) => {
+      if (e.target instanceof Element && e.target.closest("a, button")) {
+        return;
+      }
+
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         openAction();
