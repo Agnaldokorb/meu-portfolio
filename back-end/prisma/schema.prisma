@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Repository {
+  id                Int        @id @default(autoincrement())
+  github_id         BigInt     @unique @db.BigInt
+  nome              String    @db.VarChar(255)
+  url_github        String    @db.VarChar(500)
+  url_website       String?   @db.VarChar(500)
+  descricao         String?   @db.Text
+  readme_md         String?   @db.Text
+  ultimo_commit_sha String?   @db.VarChar(100)
+  ultimo_commit_msg String?   @db.Text
+  ultimo_commit_data DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@map("repositories")
+}

@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "API Portfolio Agnaldo Korb",
-  description: "API para sincronizar repositorios publicos do GitHub com MySQL.",
+  title: "API Portfolio",
+  description: "API para sincronizacao de repositorios do GitHub",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+type RootLayoutProps = {
+  children: ReactNode;
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="pt-BR">
+      <body>{children}</body>
     </html>
   );
 }

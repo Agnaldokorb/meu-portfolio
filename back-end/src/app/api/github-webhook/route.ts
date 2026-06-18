@@ -1,60 +1,86 @@
-import { getServerEnv } from "@/lib/env";
-import { errorResponse, jsonResponse, optionsResponse } from "@/lib/http";
-import { syncRepositoryByName } from "@/lib/sync";
-import {
-  type GitHubWebhookPayload,
-  verifyGitHubSignature,
-} from "@/lib/webhook";
+import crypto from "node:crypto";
 
-export const dynamic = "force-dynamic";
+import { getRepositorySyncPayload } from "@/lib/github";
+import { upsertRepository } from "@/lib/repositories";
+import type { GitHubRepository } from "@/types/repository";
 
-export async function POST(request: Request): Promise<Response> {
+type PushWebhookPayload = {
+  repository?: GitHubRepository;
+};
+
+function secureCompare(a: string, b: string): boolean {
+  const aBuffer = Buffer.from(a, "utf8");
+  const bBuffer = Buffer.from(b, "utf8");
+
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(aBuffer, bBuffer);
+}
+
+function isValidGithubSignature(
+  body: string,
+  signatureHeader: string,
+): boolean {
+  const secret = process.env.GITHUB_WEBHOOK_SECRET?.trim();
+
+  if (!secret) {
+    return true;
+  }
+
+  if (!signatureHeader.startsWith("sha256=")) {
+    return false;
+  }
+
+  const expected = `sha256=${crypto.createHmac("sha256", secret).update(body).digest("hex")}`;
+  return secureCompare(expected, signatureHeader);
+}
+
+export async function POST(request: Request) {
   try {
-    const rawBody = await request.text();
-    const env = getServerEnv();
-    const signature = request.headers.get("x-hub-signature-256");
+    const signature = request.headers.get("x-hub-signature-256") ?? "";
+    const event = request.headers.get("x-github-event") ?? "";
 
-    if (!verifyGitHubSignature(rawBody, signature, env.GITHUB_WEBHOOK_SECRET)) {
-      return jsonResponse(
-        {
-          error: "Assinatura invalida",
-          message: "Webhook rejeitado",
-        },
+    const rawBody = await request.text();
+
+    if (!isValidGithubSignature(rawBody, signature)) {
+      return Response.json(
+        { message: "Assinatura do webhook invalida." },
         { status: 401 },
       );
     }
 
-    const event = request.headers.get("x-github-event") ?? "unknown";
-    const payload = JSON.parse(rawBody) as GitHubWebhookPayload;
-
-    if (event === "ping") {
-      return jsonResponse({
-        message: "Webhook do GitHub conectado",
-        event,
-      });
+    if (!["push", "repository"].includes(event)) {
+      return Response.json(
+        { message: "Evento ignorado.", event },
+        { status: 202 },
+      );
     }
 
-    const repositoryName = payload.repository?.name;
+    const payload = JSON.parse(rawBody) as PushWebhookPayload;
 
-    if (!repositoryName || payload.action === "deleted") {
-      return jsonResponse({
-        message: "Evento ignorado",
-        event,
-      });
+    if (!payload.repository) {
+      return Response.json(
+        { message: "Payload invalido: repositorio nao informado." },
+        { status: 400 },
+      );
     }
 
-    const repository = await syncRepositoryByName(repositoryName);
+    const repositoryPayload = await getRepositorySyncPayload(
+      payload.repository,
+    );
+    await upsertRepository(repositoryPayload);
 
-    return jsonResponse({
-      message: "Repositorio atualizado pelo webhook",
-      event,
-      repository: repository.nome,
+    return Response.json({
+      message: "Webhook processado com sucesso.",
+      repository: payload.repository.name,
     });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Erro ao processar webhook do GitHub:", error);
+    return Response.json(
+      { message: "Erro ao processar webhook do GitHub." },
+      { status: 500 },
+    );
   }
-}
-
-export function OPTIONS(): Response {
-  return optionsResponse();
 }

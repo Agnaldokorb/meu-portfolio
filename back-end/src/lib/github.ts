@@ -1,146 +1,133 @@
-import { toMysqlDateTime } from "./date";
-import { getServerEnv, type ServerEnv } from "./env";
-import type {
-  GitHubCommit,
-  GitHubRepository,
-  RepositoryUpsertInput,
-} from "@/types/repository";
+import type { GitHubCommit, GitHubRepository } from "@/types/repository";
 
-export class GitHubApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "GitHubApiError";
+const GITHUB_API_BASE_URL = "https://api.github.com";
+
+function getGitHubToken(): string {
+  const token = process.env.GITHUB_TOKEN?.trim();
+
+  if (!token) {
+    throw new Error("Variavel GITHUB_TOKEN nao configurada.");
   }
+
+  return token;
 }
 
-export class GitHubService {
-  private readonly baseUrl = "https://api.github.com";
+function buildGithubHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    Authorization: `Bearer ${getGitHubToken()}`,
+  };
 
-  constructor(private readonly env: ServerEnv = getServerEnv()) {}
+  return headers;
+}
 
-  async listPublicRepositories(): Promise<GitHubRepository[]> {
-    const repositories: GitHubRepository[] = [];
-    let page = 1;
+function getGitHubUsername(): string {
+  const username = process.env.GITHUB_USERNAME?.trim();
 
-    while (true) {
-      const pageRepositories = await this.request<GitHubRepository[]>(
-        `/users/${encodeURIComponent(
-          this.env.GITHUB_USERNAME,
-        )}/repos?sort=updated&per_page=100&page=${page}`,
-      );
-
-      repositories.push(...pageRepositories);
-
-      if (pageRepositories.length < 100) {
-        return repositories;
-      }
-
-      page += 1;
-    }
+  if (!username) {
+    throw new Error("Variavel GITHUB_USERNAME nao configurada.");
   }
 
-  async getRepository(repositoryName: string): Promise<GitHubRepository> {
-    return this.request<GitHubRepository>(
-      `/repos/${encodeURIComponent(this.env.GITHUB_USERNAME)}/${encodeURIComponent(
-        repositoryName,
-      )}`,
-    );
+  return username;
+}
+
+async function parseGithubError(response: Response): Promise<never> {
+  let details = "";
+  try {
+    const json = (await response.json()) as { message?: string };
+    details = json.message ? ` - ${json.message}` : "";
+  } catch {
+    details = "";
   }
 
-  async getReadme(repositoryName: string): Promise<string | null> {
-    try {
-      return await this.request<string>(
-        `/repos/${encodeURIComponent(this.env.GITHUB_USERNAME)}/${encodeURIComponent(
-          repositoryName,
-        )}/readme`,
-        "application/vnd.github.raw+json",
-      );
-    } catch (error) {
-      if (error instanceof GitHubApiError && error.status === 404) {
-        return null;
-      }
+  throw new Error(
+    `Erro na API do GitHub (${response.status} ${response.statusText})${details}`,
+  );
+}
 
-      console.error(`Erro ao buscar README do repositorio ${repositoryName}`, error);
-      return null;
-    }
+export async function fetchPublicRepositories(): Promise<GitHubRepository[]> {
+  const username = getGitHubUsername();
+  const url = `${GITHUB_API_BASE_URL}/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=999`;
+
+  const response = await fetch(url, {
+    headers: buildGithubHeaders(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    await parseGithubError(response);
   }
 
-  async getLatestCommit(
-    repositoryName: string,
-    defaultBranch: string,
-  ): Promise<GitHubCommit | null> {
-    try {
-      const commits = await this.request<GitHubCommit[]>(
-        `/repos/${encodeURIComponent(this.env.GITHUB_USERNAME)}/${encodeURIComponent(
-          repositoryName,
-        )}/commits?per_page=1&sha=${encodeURIComponent(defaultBranch)}`,
-      );
+  const repositories = (await response.json()) as GitHubRepository[];
+  return repositories;
+}
 
-      return commits[0] ?? null;
-    } catch (error) {
-      if (error instanceof GitHubApiError && error.status === 409) {
-        return null;
-      }
+export async function fetchRepositoryReadme(
+  owner: string,
+  repo: string,
+): Promise<string | null> {
+  const url = `${GITHUB_API_BASE_URL}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/readme`;
+  const response = await fetch(url, {
+    headers: {
+      ...buildGithubHeaders(),
+      Accept: "application/vnd.github.raw+json",
+    },
+    cache: "no-store",
+  });
 
-      console.error(
-        `Erro ao buscar ultimo commit do repositorio ${repositoryName}`,
-        error,
-      );
-      return null;
-    }
+  if (response.status === 404) {
+    return null;
   }
 
-  async toRepositoryRecord(
-    repository: GitHubRepository,
-  ): Promise<RepositoryUpsertInput> {
-    const [readmeMd, latestCommit] = await Promise.all([
-      this.getReadme(repository.name),
-      this.getLatestCommit(repository.name, repository.default_branch),
-    ]);
-
-    return {
-      github_id: repository.id,
-      nome: repository.name,
-      url_github: repository.html_url,
-      url_website: repository.homepage?.trim() || null,
-      descricao: repository.description,
-      readme_md: readmeMd,
-      ultimo_commit_sha: latestCommit?.sha ?? null,
-      ultimo_commit_msg: latestCommit?.commit.message ?? null,
-      ultimo_commit_data: toMysqlDateTime(
-        latestCommit?.commit.author?.date ?? repository.pushed_at,
-      ),
-    };
+  if (!response.ok) {
+    await parseGithubError(response);
   }
 
-  private async request<T>(path: string, accept = "application/vnd.github+json"): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      cache: "no-store",
-      headers: {
-        Accept: accept,
-        "User-Agent": "agnaldo-portfolio-api",
-        "X-GitHub-Api-Version": "2022-11-28",
-        ...(this.env.GITHUB_TOKEN
-          ? { Authorization: `Bearer ${this.env.GITHUB_TOKEN}` }
-          : {}),
-      },
-    });
+  return response.text();
+}
 
-    if (!response.ok) {
-      const details = await response.text();
-      throw new GitHubApiError(
-        `GitHub API respondeu ${response.status}: ${details.slice(0, 300)}`,
-        response.status,
-      );
-    }
+export async function fetchLatestCommit(
+  owner: string,
+  repo: string,
+): Promise<GitHubCommit | null> {
+  const url = `${GITHUB_API_BASE_URL}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits?per_page=1`;
+  const response = await fetch(url, {
+    headers: buildGithubHeaders(),
+    cache: "no-store",
+  });
 
-    if (accept.includes("raw")) {
-      return response.text() as Promise<T>;
-    }
-
-    return response.json() as Promise<T>;
+  if (response.status === 409 || response.status === 404) {
+    return null;
   }
+
+  if (!response.ok) {
+    await parseGithubError(response);
+  }
+
+  const commits = (await response.json()) as GitHubCommit[];
+  return commits[0] ?? null;
+}
+
+export async function getRepositorySyncPayload(repository: GitHubRepository) {
+  const [readme, latestCommit] = await Promise.all([
+    fetchRepositoryReadme(repository.owner.login, repository.name).catch(() =>
+      Promise.resolve(null),
+    ),
+    fetchLatestCommit(repository.owner.login, repository.name),
+  ]);
+
+  return {
+    github_id: repository.id,
+    nome: repository.name,
+    url_github: repository.html_url,
+    url_website: repository.homepage ?? null,
+    descricao: repository.description ?? null,
+    readme_md: readme,
+    ultimo_commit_sha: latestCommit?.sha ?? null,
+    ultimo_commit_msg: latestCommit?.commit.message ?? null,
+    ultimo_commit_data: latestCommit?.commit.committer.date
+      ? new Date(latestCommit.commit.committer.date)
+      : null,
+  };
 }

@@ -1,163 +1,216 @@
-# Portfólio Pessoal | Agnaldo Korb
+# Portfolio + API de Sincronizacao GitHub
 
-Portfólio pessoal desenvolvido para apresentar minha trajetória profissional,
-formações, projetos publicados no GitHub e canais de contato.
+Projeto completo com:
 
-O site foi construído com HTML, CSS e JavaScript puro. Os dados do perfil e dos
-repositórios são carregados dinamicamente pela API pública do GitHub.
+- Front-end em HTML, CSS e JavaScript puro na raiz do repositorio.
+- API em Next.js + TypeScript + Prisma dentro da pasta back-end.
+- Persistencia em PostgreSQL (Supabase).
 
-## Funcionalidades
+## Objetivo
 
-- Apresentação do perfil público do GitHub na página inicial.
-- Seção de formações em andamento e concluídas.
-- Exibição dos três repositórios atualizados mais recentemente.
-- Listagem de até 100 repositórios públicos do perfil `AgnaldoKorb`.
-- Modal com o conteúdo do `README.md` de cada projeto.
-- Links para o repositório e para a demonstração web, quando disponível.
-- Formulário de contato por e-mail ou WhatsApp.
-- Menu responsivo com versão hambúrguer para dispositivos móveis.
-- Destaque automático da página ativa no menu.
-- Estados de carregamento e mensagens de erro para as requisições ao GitHub.
-- Navegação por teclado e atributos básicos de acessibilidade.
-
-## Páginas
-
-| Página | Descrição |
-| --- | --- |
-| `index.html` | Perfil, apresentação e formações. |
-| `pages/projetos.html` | Cards dos projetos recentes e lista de repositórios públicos. |
-| `pages/sobre.html` | Minha apresentação, trajetória e objetivo profissional. |
-| `pages/contato.html` | Formulário de contato por e-mail ou WhatsApp. |
+Sincronizar os repositorios publicos do usuario GitHub Agnaldokorb com o banco de dados e disponibilizar os dados por JSON para consumo do front-end.
 
 ## Tecnologias
+
+Front-end:
 
 - HTML5
 - CSS3
 - JavaScript
+
+Back-end (pasta back-end):
+
+- Node.js LTS
+- Next.js (App Router)
+- TypeScript
+- Prisma ORM
+- Supabase (PostgreSQL)
 - GitHub REST API
-- GitHub Markdown API
-- WhatsApp `wa.me`
-- Protocolo `mailto:`
 
-O projeto não utiliza framework, gerenciador de pacotes ou etapa de build.
+## Estrutura
 
-## Integração com o GitHub
+- Front-end: raiz do projeto (paginas, css, js, assets)
+- API: back-end/src/app/api
+- Camada de banco: back-end/src/lib/db.ts
+- Camada GitHub: back-end/src/lib/github.ts
+- Camada repositories: back-end/src/lib/repositories.ts
+- Tipos: back-end/src/types/repository.ts
+- SQL: back-end/sql/create_repositories_table.sql
 
-O arquivo `js/api.js` consulta o usuário `AgnaldoKorb` para:
+## Instalar dependencias
 
-- carregar foto, nome e biografia do perfil;
-- buscar repositórios públicos ordenados pela atualização mais recente;
-- renderizar os três projetos mais recentes em cards;
-- montar uma lista com até 100 projetos;
-- buscar e renderizar o `README.md` dos repositórios dentro de um modal.
-
-As imagens dos projetos seguem a convenção:
-
-```text
-assets/<nome-do-repositorio>.png
-```
-
-Quando uma imagem não é encontrada, o site utiliza
-`assets/error-image.jpg`.
-
-Como as requisições usam a API pública sem autenticação, elas estão sujeitas
-aos limites de acesso definidos pelo GitHub.
-
-## Contato
-
-O formulário permite escolher entre dois canais:
-
-- **E-mail:** abre o cliente de e-mail padrão com a mensagem preenchida.
-- **WhatsApp:** abre uma conversa com a mensagem pronta para envio.
-
-Os dados de contato estão definidos no início de `js/contact.js`:
-
-```js
-const CONTACT_EMAIL = "contato@agnaldo.dev.br";
-const WHATSAPP_NUMBER = "5547999253962";
-```
-
-Atualmente, o formulário não utiliza banco de dados nem uma API própria e não
-armazena as mensagens enviadas.
-
-## Estrutura do projeto
-
-```text
-meu-portfolio/
-├── assets/
-│   ├── dio-bootcamp.webp
-│   ├── engenharia-software.png
-│   ├── error-image.jpg
-│   ├── logo-senai.svg
-│   └── skillmatch-js.png
-├── css/
-│   ├── contact.css
-│   ├── footer.css
-│   ├── index.css
-│   ├── menu.css
-│   ├── projetos.css
-│   └── sobre.css
-├── js/
-│   ├── api.js
-│   ├── contact.js
-│   ├── home.js
-│   └── menu.js
-├── pages/
-│   ├── contato.html
-│   ├── projetos.html
-│   └── sobre.html
-├── index.html
-└── README.md
-```
-
-## Como executar localmente
-
-Não é necessário instalar dependências. Para evitar restrições do navegador em
-requisições feitas por arquivos locais, execute o projeto com um servidor
-estático.
-
-### Opção 1: Live Server
-
-1. Abra a pasta do projeto no Visual Studio Code.
-2. Instale a extensão **Live Server**.
-3. Clique com o botão direito em `index.html`.
-4. Selecione **Open with Live Server**.
-
-### Opção 2: Node.js
-
-Com Node.js instalado, execute na raiz do projeto:
+Na pasta do back-end:
 
 ```bash
-npx serve .
+cd back-end
+npm install
 ```
 
-Depois, abra no navegador o endereço informado no terminal.
+## Configurar ambiente (.env.local)
 
-## Personalização
+Crie back-end/.env.local com:
 
-- Altere o usuário do GitHub em `GITHUB_USERNAME`, dentro de `js/api.js`.
-- Atualize e-mail e WhatsApp em `js/contact.js`.
-- Edite as formações diretamente em `index.html`.
-- Atualize a apresentação pessoal em `pages/sobre.html`.
-- Adicione imagens dos repositórios na pasta `assets/`.
-- Ajuste cores, espaçamentos e responsividade nos arquivos da pasta `css/`.
+```env
+DATABASE_URL=""
+DIRECT_URL=""
 
-## Responsividade e acessibilidade
+GITHUB_USERNAME=Agnaldokorb
+GITHUB_TOKEN=
+GITHUB_WEBHOOK_SECRET=
+```
 
-O layout adapta cards, formulários, modal e navegação para telas menores. Em
-dispositivos móveis, o menu principal é substituído por um botão hambúrguer.
+Observacoes:
 
-O projeto também inclui:
+- Use credenciais do banco PostgreSQL do Supabase.
+- Nunca exponha GITHUB_TOKEN no front-end.
+- Nunca use NEXT_PUBLIC_GITHUB_TOKEN.
 
-- textos alternativos em imagens;
-- indicação da página atual com `aria-current`;
-- controles com `aria-label` e `aria-expanded`;
-- mensagens de status com `aria-live`;
-- suporte às teclas `Enter`, `Espaço` e `Escape` em elementos interativos.
+## SQL da tabela repositories
 
-## Autor
+Use o script abaixo (tambem disponivel em back-end/sql/create_repositories_table.sql):
 
-**Agnaldo Korb**
+```sql
+CREATE TABLE IF NOT EXISTS repositories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  github_id BIGINT UNIQUE NOT NULL,
+  nome VARCHAR(255) NOT NULL,
+  url_github VARCHAR(500) NOT NULL,
+  url_website VARCHAR(500),
+  descricao TEXT,
+  readme_md LONGTEXT,
+  ultimo_commit_sha VARCHAR(100),
+  ultimo_commit_msg TEXT,
+  ultimo_commit_data DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
 
-- GitHub: [github.com/AgnaldoKorb](https://github.com/AgnaldoKorb)
-- E-mail: [contato@agnaldo.dev.br](mailto:contato@agnaldo.dev.br)
+## Prisma
+
+Gerar client e sincronizar schema:
+
+```bash
+cd back-end
+npm run prisma:generate
+npm run prisma:push
+```
+
+## Rodar o projeto
+
+Back-end:
+
+```bash
+cd back-end
+npm run dev
+```
+
+Por padrao, a API local fica em:
+
+```txt
+http://localhost:3000
+```
+
+Front-end:
+
+- Servir a raiz com servidor estatico (exemplo: Live Server).
+- O front ja esta preparado para consumir https://api.agnaldo.dev.br/api/repositories.
+- Para ambiente local, voce pode definir window.PORTFOLIO_API_BASE_URL antes de carregar js/api.js.
+
+## Rotas da API
+
+Health check:
+
+```txt
+GET /api/health
+```
+
+Resposta esperada:
+
+```json
+{
+  "status": "ok",
+  "message": "API funcionando"
+}
+```
+
+Sincronizar GitHub com banco:
+
+```txt
+GET /api/sync-github
+```
+
+Comportamento:
+
+- Le GITHUB_USERNAME e GITHUB_TOKEN do ambiente.
+- Busca repositorios no endpoint GitHub com sort=updated e per_page=999.
+- Busca README e ultimo commit de cada repositorio.
+- Salva ou atualiza no banco usando ON DUPLICATE KEY UPDATE.
+
+Resposta de sucesso:
+
+```json
+{
+  "message": "Repositórios sincronizados com sucesso",
+  "total": 10
+}
+```
+
+Listar repositorios do banco:
+
+```txt
+GET /api/repositories
+```
+
+Comportamento:
+
+- Busca somente no banco de dados.
+- Ordena por ultimo_commit_data desc.
+- Retorna JSON para consumo do front-end.
+
+## Webhook GitHub (atualizacao continua)
+
+Rota criada:
+
+```txt
+POST /api/github-webhook
+```
+
+Uso recomendado:
+
+- Configure no GitHub Webhooks para eventos push e repository.
+- Defina GITHUB_WEBHOOK_SECRET no ambiente.
+- Envie o mesmo secret no webhook do GitHub.
+
+Ao receber evento valido, a API atualiza o repositorio afetado no banco.
+
+## Consumo no front-end
+
+A pagina pages/projetos.html ja consome /api/repositories e exibe:
+
+- Imagem (assets)
+- Nome
+- Descricao
+- Link GitHub
+- Link Website (quando existir)
+- Data do ultimo commit
+- Estados de carregamento e erro
+- Botao de recarregar dados
+
+## Seguranca
+
+- Token GitHub apenas no servidor.
+- Sem exposicao de segredo no navegador.
+- Validacao de variaveis obrigatorias no endpoint de sync.
+- Tratamento de erros da API GitHub e banco com mensagens amigaveis.
+
+## Comandos uteis
+
+```bash
+cd back-end
+npm run dev
+npm run typecheck
+npm run lint
+npm run prisma:generate
+npm run prisma:push
+```

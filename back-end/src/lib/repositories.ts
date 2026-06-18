@@ -1,112 +1,73 @@
-import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import { prisma } from "@/lib/db";
+import type {
+  RepositoryRecord,
+  SyncedRepositoryInput,
+} from "@/types/repository";
 
-import { mysqlDateTimeToIso } from "./date";
-import { getDbPool } from "./db";
-import type { RepositoryRecord, RepositoryUpsertInput } from "@/types/repository";
+export async function upsertRepository(
+  repository: SyncedRepositoryInput,
+): Promise<void> {
+  const commitDate = repository.ultimo_commit_data
+    ? repository.ultimo_commit_data instanceof Date
+      ? repository.ultimo_commit_data
+      : new Date(repository.ultimo_commit_data)
+    : null;
 
-type RepositoryRow = RowDataPacket & {
-  id: number;
-  github_id: number;
-  nome: string;
-  url_github: string;
-  url_website: string | null;
-  descricao: string | null;
-  readme_md: string | null;
-  ultimo_commit_sha: string | null;
-  ultimo_commit_msg: string | null;
-  ultimo_commit_data: string | null;
-  created_at: string;
-  updated_at: string;
-};
+  await prisma.$executeRaw`
+    INSERT INTO repositories (
+      github_id,
+      nome,
+      url_github,
+      url_website,
+      descricao,
+      readme_md,
+      ultimo_commit_sha,
+      ultimo_commit_msg,
+      ultimo_commit_data,
+      updated_at
+    ) VALUES (
+      ${repository.github_id},
+      ${repository.nome},
+      ${repository.url_github},
+      ${repository.url_website},
+      ${repository.descricao},
+      ${repository.readme_md},
+      ${repository.ultimo_commit_sha},
+      ${repository.ultimo_commit_msg},
+      ${commitDate},
+      NOW()
+    )
+    ON CONFLICT (github_id) DO UPDATE SET
+      nome = EXCLUDED.nome,
+      url_github = EXCLUDED.url_github,
+      url_website = EXCLUDED.url_website,
+      descricao = EXCLUDED.descricao,
+      readme_md = EXCLUDED.readme_md,
+      ultimo_commit_sha = EXCLUDED.ultimo_commit_sha,
+      ultimo_commit_msg = EXCLUDED.ultimo_commit_msg,
+      ultimo_commit_data = EXCLUDED.ultimo_commit_data,
+      updated_at = NOW()
+  `;
+}
 
-export class RepositoryService {
-  async upsert(repository: RepositoryUpsertInput): Promise<void> {
-    const pool = getDbPool();
+export async function listRepositories(): Promise<RepositoryRecord[]> {
+  const records = await prisma.$queryRaw<RepositoryRecord[]>`
+    SELECT
+      id,
+      github_id,
+      nome,
+      url_github,
+      url_website,
+      descricao,
+      readme_md,
+      ultimo_commit_sha,
+      ultimo_commit_msg,
+      ultimo_commit_data,
+      created_at,
+      updated_at
+    FROM repositories
+    ORDER BY ultimo_commit_data DESC
+  `;
 
-    await pool.execute<ResultSetHeader>(
-      `
-        INSERT INTO repositories (
-          github_id,
-          nome,
-          url_github,
-          url_website,
-          descricao,
-          readme_md,
-          ultimo_commit_sha,
-          ultimo_commit_msg,
-          ultimo_commit_data
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          nome = VALUES(nome),
-          url_github = VALUES(url_github),
-          url_website = VALUES(url_website),
-          descricao = VALUES(descricao),
-          readme_md = VALUES(readme_md),
-          ultimo_commit_sha = VALUES(ultimo_commit_sha),
-          ultimo_commit_msg = VALUES(ultimo_commit_msg),
-          ultimo_commit_data = VALUES(ultimo_commit_data)
-      `,
-      [
-        repository.github_id,
-        repository.nome,
-        repository.url_github,
-        repository.url_website,
-        repository.descricao,
-        repository.readme_md,
-        repository.ultimo_commit_sha,
-        repository.ultimo_commit_msg,
-        repository.ultimo_commit_data,
-      ],
-    );
-  }
-
-  async upsertMany(repositories: RepositoryUpsertInput[]): Promise<number> {
-    for (const repository of repositories) {
-      await this.upsert(repository);
-    }
-
-    return repositories.length;
-  }
-
-  async list(): Promise<RepositoryRecord[]> {
-    const pool = getDbPool();
-    const [rows] = await pool.query<RepositoryRow[]>(
-      `
-        SELECT
-          id,
-          github_id,
-          nome,
-          url_github,
-          url_website,
-          descricao,
-          readme_md,
-          ultimo_commit_sha,
-          ultimo_commit_msg,
-          ultimo_commit_data,
-          created_at,
-          updated_at
-        FROM repositories
-        ORDER BY
-          ultimo_commit_data IS NULL ASC,
-          ultimo_commit_data DESC,
-          updated_at DESC
-      `,
-    );
-
-    return rows.map((row) => ({
-      id: row.id,
-      github_id: Number(row.github_id),
-      nome: row.nome,
-      url_github: row.url_github,
-      url_website: row.url_website,
-      descricao: row.descricao,
-      readme_md: row.readme_md,
-      ultimo_commit_sha: row.ultimo_commit_sha,
-      ultimo_commit_msg: row.ultimo_commit_msg,
-      ultimo_commit_data: mysqlDateTimeToIso(row.ultimo_commit_data),
-      created_at: mysqlDateTimeToIso(row.created_at) ?? row.created_at,
-      updated_at: mysqlDateTimeToIso(row.updated_at) ?? row.updated_at,
-    }));
-  }
+  return records;
 }
