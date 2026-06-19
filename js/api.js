@@ -352,12 +352,19 @@ class githubRepositories {
     this.modalOverlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("repo-modal-open");
 
+    let cachedPreview = this.readmeCache.get(repository.name);
+    if (cachedPreview) {
+      readmeContent.innerHTML = cachedPreview;
+      return;
+    }
+
     let readme =
       repository.readme_md ||
       "README.md principal nao encontrado para este repositorio.";
 
-    this.readmeCache.set(repository.name, readme);
-    readmeContent.replaceChildren(this.createReadmeBlock(readme));
+    let readmePreview = await this.renderReadmePreview(readme, repository.name);
+    this.readmeCache.set(repository.name, readmePreview);
+    readmeContent.innerHTML = readmePreview;
   }
 
   closeRepositoryModal() {
@@ -375,10 +382,94 @@ class githubRepositories {
     }
   }
 
-  createReadmeBlock(readme) {
+  async renderReadmePreview(readme, repositoryName) {
+    try {
+      let html = await this.fetchMarkdownPreview(readme, repositoryName);
+
+      if (html) {
+        return this.sanitizeHtml(html);
+      }
+    } catch (error) {
+      console.warn("Nao foi possivel renderizar o preview do README:", error);
+    }
+
     let pre = document.createElement("pre");
     pre.textContent = readme;
-    return pre;
+    return pre.outerHTML;
+  }
+
+  async fetchMarkdownPreview(markdown, repositoryName) {
+    let response = await fetch("https://api.github.com/markdown", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/vnd.github+json",
+      },
+      body: JSON.stringify({
+        text: markdown,
+        mode: "gfm",
+        context: `${GITHUB_USERNAME}/${repositoryName}`,
+      }),
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    return response.text();
+  }
+
+  sanitizeHtml(html) {
+    let template = document.createElement("template");
+    template.innerHTML = html;
+
+    let blockedTags = [
+      "script",
+      "iframe",
+      "object",
+      "embed",
+      "style",
+      "link",
+      "meta",
+      "base",
+      "form",
+      "input",
+      "button",
+      "textarea",
+      "select",
+    ];
+
+    blockedTags.forEach((tag) => {
+      template.content.querySelectorAll(tag).forEach((element) => {
+        element.remove();
+      });
+    });
+
+    template.content.querySelectorAll("*").forEach((element) => {
+      [...element.attributes].forEach((attribute) => {
+        let name = attribute.name.toLowerCase();
+        let value = attribute.value.trim();
+
+        if (name.startsWith("on")) {
+          element.removeAttribute(attribute.name);
+          return;
+        }
+
+        if (
+          (name === "href" || name === "src" || name === "xlink:href") &&
+          /^javascript:/i.test(value)
+        ) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+
+      if (element.tagName === "A") {
+        element.setAttribute("target", "_blank");
+        element.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+
+    return template.innerHTML;
   }
 
   createRepositoryActions(repository) {
