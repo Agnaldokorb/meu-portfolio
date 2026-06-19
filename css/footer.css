@@ -1,7 +1,6 @@
 #pe {
-  position: end;
-  z-index: 2;
   display: flex;
+  position: relative;
   justify-content: center;
   align-items: center;
   flex-direction: row;
@@ -34,10 +33,14 @@ footer {
     color: #F0F0F2;
     text-align: center;
     padding: 20px;
-    position: fixed;
+    position: relative;
     bottom: 0;
     left: 0;
     width: 100%;
+}
+footer span {
+    display: inline-block;
+    margin: 0 5px;
 }
 
 @media (max-width: 665px) {
